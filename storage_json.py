@@ -8,39 +8,39 @@ class StorageJson(IStorage):
         self.file_path = file_path
 
     def _load_movies(self):
-        """Lädt die Filmdaten aus der JSON-Datei."""
+        """Loads movie data from the JSON file."""
         if os.path.exists(self.file_path):
             with open(self.file_path, 'r') as file:
                 try:
                     return json.load(file)
                 except json.JSONDecodeError:
-                    return {}  # Leeres Dictionary, falls JSON-Datei leer/korrupt ist
+                    return {}  # Returns an empty dictionary if the JSON file is empty or corrupted
         return {}
 
     def _save_movies(self, movies):
-        """Speichert die Filmdaten in der JSON-Datei."""
+        """Saves movie data to the JSON file."""
         with open(self.file_path, 'w') as file:
             json.dump(movies, file, indent=4)
 
     def list_movies(self):
-        """Gibt alle Filme zurück."""
+        """Returns all movies."""
         return self._load_movies()
 
-    def add_movie(self, title, year, rating, poster=None):
-        """Fügt einen neuen Film hinzu."""
+    def add_movie(self, title, year, rating):
+        """Adds a new movie."""
         movies = self._load_movies()
-        movies[title] = {"year": year, "rating": rating, "poster": poster}
+        movies[title] = {"year": year, "rating": rating}
         self._save_movies(movies)
 
     def delete_movie(self, title):
-        """Löscht einen Film."""
+        """Deletes a movie."""
         movies = self._load_movies()
         if title in movies:
             del movies[title]
             self._save_movies(movies)
 
     def update_movie(self, title, rating):
-        """Aktualisiert die Bewertung eines Films."""
+        """Updates the rating of a movie."""
         movies = self._load_movies()
         if title in movies:
             movies[title]['rating'] = rating
