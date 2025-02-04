@@ -4,9 +4,11 @@ import matplotlib.pyplot as plt
 
 class MovieApp:
     def __init__(self, storage):
+        """Initializes the MovieApp with a storage object."""
         self._storage = storage
 
     def _command_list_movies(self):
+        """Lists all movies in the database."""
         movies = self._storage.list_movies()
         if not movies:
             print("No movies found.")
@@ -24,7 +26,7 @@ class MovieApp:
                 print(f"{index}. {title} ({year_display}) Rating: {movie['rating']:.1f}")
 
     def _command_add_movie(self):
-        # Check if the movie already exists in the list
+        """Adds a new movie to the database."""
         existing_movies = self._storage.list_movies()
         movie_name = input("Enter the movie name to add: ").strip()
 
@@ -35,7 +37,6 @@ class MovieApp:
         try:
             user_movie_rating = float(input("Enter your rating between 1 and 10: "))
             if 1 <= user_movie_rating <= 10:
-                # Allow the user to skip the year by pressing Enter
                 user_movie_year_input = input("Enter the movie release year (or press Enter if unknown): ").strip()
 
                 if user_movie_year_input:  # If the user entered something, try converting to int
@@ -56,35 +57,28 @@ class MovieApp:
             print("Invalid rating. Please enter a numeric value.")
 
     def _command_delete_movie(self):
+        """Deletes a movie from the database."""
         movies = self._storage.list_movies()
         if not movies:
             print("No movies to delete.")
             return
 
-        # Display the list of movies
         self._command_list_movies()
 
         try:
-            # Ask for the index of the movie to delete (User input starts at 1)
             ask_user_index = int(input("Which movie do you want to delete? Enter a number: "))
+            ask_user_index -= 1  # Convert to zero-based index
 
-            # Convert to zero-based index
-            ask_user_index -= 1
-
-            # Ensure that the index is valid
             if not (0 <= ask_user_index < len(movies)):
                 print("Invalid input. Please enter a valid number.")
                 return
 
-            # Get the sorted list of movies
             sorted_movies = sorted(movies.items(),
                                    key=lambda x: (x[1].get('year') if x[1].get('year') is not None else float('inf')),
                                    reverse=True)
 
-            # Get the title of the movie to be deleted
             movie_title = sorted_movies[ask_user_index][0]
 
-            # Ask for confirmation from the user
             confirm = input(f"Are you sure you want to delete '{movie_title}'? (y/n): ").strip().lower()
             if confirm == 'y':
                 self._storage.delete_movie(movie_title)
@@ -95,35 +89,28 @@ class MovieApp:
             print("Invalid input. Please enter a numeric value.")
 
     def _command_update_movie(self):
+        """Updates the rating of an existing movie."""
         movies = self._storage.list_movies()
         if not movies:
             print("No movies to update.")
             return
 
-        # Display the list of movies
         self._command_list_movies()
 
         try:
-            # Ask for the index of the movie to update (User input starts at 1)
             ask_user_index = int(input("Which movie do you want to update? Enter a number: "))
+            ask_user_index -= 1  # Convert to zero-based index
 
-            # Convert to zero-based index
-            ask_user_index -= 1
-
-            # Ensure that the index is valid
             if not (0 <= ask_user_index < len(movies)):
                 print("Invalid input. Please enter a valid number.")
                 return
 
-            # Get the sorted list of movies
             sorted_movies = sorted(movies.items(),
                                    key=lambda x: (x[1].get('year') if x[1].get('year') is not None else float('inf')),
                                    reverse=True)
 
-            # Get the title of the movie to update
             movie_title = sorted_movies[ask_user_index][0]
 
-            # Ask for a new rating
             new_rating = float(input(f"Enter the new rating for '{movie_title}' (1-10): "))
             if 1 <= new_rating <= 10:
                 self._storage.update_movie(movie_title, new_rating)
@@ -134,15 +121,14 @@ class MovieApp:
             print("Invalid input. Please enter a numeric value.")
 
     def _command_movie_stats(self):
+        """Displays statistics about movie ratings."""
         movies = self._storage.list_movies()
 
         if not movies:
             print("No movies in the database to analyze.")
             return
 
-        # Ensure we access the dictionary of movies
-        ratings = [movie['rating'] for movie in
-                   movies.values()]  # Use .values() to access the dictionaries
+        ratings = [movie['rating'] for movie in movies.values()]
         avg_rating = sum(ratings) / len(ratings)
         sorted_ratings = sorted(ratings)
 
@@ -152,7 +138,6 @@ class MovieApp:
         max_rating = max(ratings)
         min_rating = min(ratings)
 
-        # Find movies with maximum and minimum ratings
         best_movies = [title for title, movie in movies.items() if movie['rating'] == max_rating]
         worst_movies = [title for title, movie in movies.items() if movie['rating'] == min_rating]
 
@@ -163,6 +148,7 @@ class MovieApp:
         print(f"Worst movie(s): {', '.join(worst_movies)} with a rating of {min_rating}")
 
     def _command_search_movie(self):
+        """Searches for movies by title or keyword."""
         search_term = input("Enter the movie title or keyword to search: ").strip().lower()
         movies = self._storage.list_movies()
         found_movies = {title: info for title, info in movies.items() if search_term in title.lower()}
@@ -173,6 +159,7 @@ class MovieApp:
             print("No movies found with that title.")
 
     def _command_random_movie(self):
+        """Displays a random movie from the database."""
         movies = self._storage.list_movies()
         if not movies:
             print("No movies available.")
@@ -181,35 +168,31 @@ class MovieApp:
         print(f"Random Movie: {movie[0]} ({movie[1]['year']}) - Rating: {movie[1]['rating']}")
 
     def _command_sort_movies(self):
+        """Sorts movies by rating in either ascending or descending order."""
         movies = self._storage.list_movies()
         if not movies:
             print("No movies to sort.")
             return
 
-        # Ask the user for the sorting order
         sort_order = input("Do you want to sort movies in ascending or descending order? (a/d): ").strip().lower()
 
-        # Ensure the input is either 'a' or 'd'
         while sort_order not in ['a', 'd']:
             sort_order = input("Invalid input. Please enter 'a' for ascending or 'd' for descending: ").strip().lower()
 
-        # Sort movies by rating
         sorted_movies = sorted(movies.items(), key=lambda x: x[1]['rating'], reverse=(sort_order == 'd'))
 
-        # Output the sorted movies
         for title, info in sorted_movies:
             print(f"{title} ({info['year']}) - Rating: {info['rating']}")
 
     def _command_show_as_histogram(self):
+        """Displays movie ratings as a histogram."""
         movies = self._storage.list_movies()
         if not movies:
             print("No movies to display.")
             return
 
-        # Ensure we are accessing the 'rating' of the movies
         ratings = []
         for title, movie in movies.items():
-            print(f"Checking movie: {title}, Rating: {movie.get('rating')}")  # Debug output
             if isinstance(movie, dict) and 'rating' in movie and movie['rating'] is not None:
                 ratings.append(movie['rating'])
 
@@ -223,6 +206,7 @@ class MovieApp:
             print("No valid ratings found to display.")
 
     def run(self):
+        """Runs the MovieApp interface."""
         while True:
             print("""*** Welcome to My Movies Database ***
     1. List movies
@@ -260,5 +244,5 @@ class MovieApp:
             elif user_input == 9:
                 self._command_show_as_histogram()
             elif user_input == 0:
-                print("Exiting the program... Bye!")
+                print("Exiting MovieApp.")
                 break
