@@ -1,0 +1,22 @@
+{
+    "The Godfather": {
+        "year": 1972,
+        "rating": 5.0,
+        "poster": null
+    },
+    "Titanic": {
+        "year": 1997,
+        "rating": 3.0,
+        "poster": null
+    },
+    "Shutter Island": {
+        "year": 2010,
+        "rating": 8.5,
+        "poster": null
+    },
+    "Inception": {
+        "year": 2010,
+        "rating": 8,
+        "poster": "https://link_to_poster.com"
+    }
+}
