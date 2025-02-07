@@ -1,5 +1,6 @@
 import random
 import matplotlib.pyplot as plt
+import requests
 
 
 class MovieApp:
@@ -9,7 +10,7 @@ class MovieApp:
 
     def _command_list_movies(self):
         """Lists all movies in the database."""
-        movies = self._storage.list_movies()
+        movies = self._storage.list_movies()  # This already contains the poster_url
         if not movies:
             print("No movies found.")
         else:
@@ -23,38 +24,32 @@ class MovieApp:
             print("Movies in Database:")
             for index, (title, movie) in enumerate(sorted_movies, start=1):
                 year_display = movie['year'] if movie['year'] is not None else "Unknown"
-                print(f"{index}. {title} ({year_display}) Rating: {movie['rating']:.1f}")
+                poster_url = movie['poster_url']  # This comes from the list_movies method
+                print(f"{index}. {title} ({year_display}) Rating: {movie['rating']:.1f} - Poster URL: {poster_url}")
 
-    def _command_add_movie(self):
-        """Adds a new movie to the database."""
-        existing_movies = self._storage.list_movies()
-        movie_name = input("Enter the movie name to add: ").strip()
-
-        if movie_name in existing_movies:
-            print(f"ERROR: {movie_name} is already in the database.")
-            return
+    def add_movie(self):
+        title = input("Enter the movie title: ")
+        api_key = "1299a8a"
+        url = f"http://www.omdbapi.com/?apikey={api_key}&t={title}"
 
         try:
-            user_movie_rating = float(input("Enter your rating between 1 and 10: "))
-            if 1 <= user_movie_rating <= 10:
-                user_movie_year_input = input("Enter the movie release year (or press Enter if unknown): ").strip()
-
-                if user_movie_year_input:  # If the user entered something, try converting to int
-                    user_movie_year = int(user_movie_year_input)
-                else:  # If the input is empty, set the year to None (unknown)
-                    user_movie_year = None
-
-                # Add the movie to storage
-                self._storage.add_movie(movie_name, user_movie_year, user_movie_rating)
-
-                # Display the movie information
-                year_display = user_movie_year if user_movie_year is not None else "Unknown"
-                print(
-                    f"Added {movie_name} with rating {user_movie_rating}, released in {year_display}, to the database.")
+            response = requests.get(url)
+            if response.status_code == 200:
+                data = response.json()
+                if data['Response'] == 'True':
+                    movie_title = data['Title']
+                    year = data['Year']
+                    rating = data['imdbRating']
+                    poster_url = data['Poster'] if data['Poster'] != 'N/A' else 'No poster available'
+                    # Save the movie data to storage
+                    self._storage.add_movie(movie_title, rating, year, poster_url)
+                    print(f"Movie '{movie_title}' added successfully!")
+                else:
+                    print(f"Error: {data['Error']}")
             else:
-                print("Invalid rating. Enter a number between 1 and 10.")
-        except ValueError:
-            print("Invalid rating. Please enter a numeric value.")
+                print("Error: Unable to fetch data from OMDb API.")
+        except requests.exceptions.RequestException as e:
+            print(f"Error: Unable to connect to OMDb API. {e}")
 
     def _command_delete_movie(self):
         """Deletes a movie from the database."""
@@ -221,14 +216,16 @@ class MovieApp:
     0. Exit
             """)
             user_input = input("Enter choice (0-9): ")
+
             while not user_input.isdigit() or not (0 <= int(user_input) <= 9):
                 user_input = input("Invalid choice. Please enter a number between 0 and 9: ")
+
             user_input = int(user_input)
 
             if user_input == 1:
                 self._command_list_movies()
             elif user_input == 2:
-                self._command_add_movie()
+                self.add_movie()  # This will only be called when the user selects option 2
             elif user_input == 3:
                 self._command_delete_movie()
             elif user_input == 4:

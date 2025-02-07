@@ -1,17 +1,15 @@
 from movie_app import MovieApp
-from storage_json import StorageJson
-
+from storage_csv import StorageCsv
 
 def main():
-    # Create a StorageJson object
-    storage = StorageJson('movies.json')
+    # Create a StorageCsv object
+    storage = StorageCsv('movies.csv')
 
-    # Create a MovieApp object using the StorageJson object
+    # Create a MovieApp object using the StorageCsv object
     movie_app = MovieApp(storage)
 
     # Run the MovieApp
-    movie_app.run()
-
+    movie_app.run()  # Only add movie for now, as per new specification
 
 if __name__ == "__main__":
     main()
