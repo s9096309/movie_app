@@ -1,0 +1,61 @@
+body {
+  background: #F5F5F0;
+  color: black;
+  font-family: Monaco, monospace;
+}
+
+.list-movies-title {
+  padding: 15px 0;
+  background: #009B50;
+  color: white;
+  text-align: center;
+  font-size: 18pt;
+}
+
+.movie-grid {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;  /* Zentriert die Filme horizontal */
+  flex-wrap: wrap;  /* Ermöglicht es den Elementen, in die nächste Reihe zu gehen, wenn nicht genug Platz ist */
+  gap: 20px;  /* Abstand zwischen den einzelnen Film-Elementen */
+  max-width: 100%;  /* Container soll die volle Breite einnehmen, ohne zu überlaufen */
+}
+
+.movie-grid li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  text-align: center;
+  width: 160px;  /* Breite der einzelnen Film-Elemente */
+  box-sizing: border-box;  /* Stellt sicher, dass Padding und Border nicht die Gesamtbreite beeinflussen */
+}
+
+.movie {
+  width: 100%;
+}
+
+.movie-title,
+.movie-year {
+  font-size: 0.9em;
+  margin-top: 10px;
+}
+
+.movie-title {
+  font-weight: bold;
+}
+
+.movie-year {
+  color: #999;
+}
+
+.movie-poster {
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  width: 128px;
+  height: 193px;
+  object-fit: cover;
+  border-radius: 5px;
+}

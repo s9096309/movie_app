@@ -1,7 +1,7 @@
 import random
 import matplotlib.pyplot as plt
 import requests
-
+import os
 
 class MovieApp:
     def __init__(self, storage):
@@ -83,37 +83,41 @@ class MovieApp:
         except ValueError:
             print("Invalid input. Please enter a numeric value.")
 
-    def _command_update_movie(self):
-        """Updates the rating of an existing movie."""
-        movies = self._storage.list_movies()
-        if not movies:
-            print("No movies to update.")
-            return
-
-        self._command_list_movies()
-
+    def generate_website(self):
+        """Generates an HTML file displaying the movies."""
         try:
-            ask_user_index = int(input("Which movie do you want to update? Enter a number: "))
-            ask_user_index -= 1  # Convert to zero-based index
+            with open("templates/index_template.html", "r", encoding="utf-8") as template_file:
+                template = template_file.read()
 
-            if not (0 <= ask_user_index < len(movies)):
-                print("Invalid input. Please enter a valid number.")
+            movies = self._storage.list_movies()
+            if not movies:
+                print("No movies to display.")
                 return
 
-            sorted_movies = sorted(movies.items(),
-                                   key=lambda x: (x[1].get('year') if x[1].get('year') is not None else float('inf')),
-                                   reverse=True)
+            movie_items = ""
+            for title, movie in movies.items():
+                movie_items += f"""
+                <li>
+                    <div class="movie">
+                        <img src="{movie['poster_url']}" alt="{title} poster">
+                        <h2>{title} ({movie['year']})</h2>
+                        <p>Rating: {movie['rating']}</p>
+                    </div>
+                </li>
+                """
 
-            movie_title = sorted_movies[ask_user_index][0]
+            html_content = template.replace("__TEMPLATE_TITLE__", "My Movie App")
+            html_content = html_content.replace("__TEMPLATE_MOVIE_GRID__", movie_items)
 
-            new_rating = float(input(f"Enter the new rating for '{movie_title}' (1-10): "))
-            if 1 <= new_rating <= 10:
-                self._storage.update_movie(movie_title, new_rating)
-                print(f"Updated '{movie_title}' with new rating: {new_rating}")
-            else:
-                print("Invalid rating. Please enter a number between 1 and 10.")
-        except ValueError:
-            print("Invalid input. Please enter a numeric value.")
+            with open("templates/index.html", "w", encoding="utf-8") as output_file:
+                output_file.write(html_content)
+
+            print("Website was generated successfully.")
+
+        except FileNotFoundError:
+            print("Error: index_template.html not found. Make sure the template file exists.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
 
     def _command_movie_stats(self):
         """Displays statistics about movie ratings."""
@@ -207,7 +211,7 @@ class MovieApp:
     1. List movies
     2. Add movie
     3. Delete movie
-    4. Update movie
+    4. Generate Website
     5. Stats
     6. Random movie
     7. Search movie
@@ -225,11 +229,11 @@ class MovieApp:
             if user_input == 1:
                 self._command_list_movies()
             elif user_input == 2:
-                self.add_movie()  # This will only be called when the user selects option 2
+                self.add_movie()
             elif user_input == 3:
                 self._command_delete_movie()
             elif user_input == 4:
-                self._command_update_movie()
+                self.generate_website()
             elif user_input == 5:
                 self._command_movie_stats()
             elif user_input == 6:

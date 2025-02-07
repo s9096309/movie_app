@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="list-movies-title">
+        <h1>{{ title }}</h1>
+    </div>
+
+    <ul class="movie-grid">
+        {% for movie in movie_grid %}
+        <li class="movie">
+            <img src="{{ movie.poster }}" alt="Poster" class="movie-poster">
+            <h2 class="movie-title">{{ movie.title }} ({{ movie.year }})</h2>
+            <p class="movie-year">{{ movie.rating }} / 10</p>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

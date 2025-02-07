@@ -1,9 +1,9 @@
 from movie_app import MovieApp
-from storage_csv import StorageCsv
+from storage.storage_csv import StorageCsv
 
 def main():
     # Create a StorageCsv object
-    storage = StorageCsv('movies.csv')
+    storage = StorageCsv('data/movies.csv')
 
     # Create a MovieApp object using the StorageCsv object
     movie_app = MovieApp(storage)
