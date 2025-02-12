@@ -100,7 +100,8 @@ class MovieApp:
                 <li>
                     <div class="movie">
                         <img src="{movie['poster_url']}" alt="{title} poster">
-                        <h2>{title} ({movie['year']})</h2>
+                        <h2>{title} <h2/>
+                        <h3> ({movie['year']})</h3>
                         <p>Rating: {movie['rating']}</p>
                     </div>
                 </li>
