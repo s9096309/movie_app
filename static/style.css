@@ -14,9 +14,9 @@ body {
 
 .movie-grid {
   list-style-type: none;
-  padding: 0;
-  margin: 0;
-  margin-top: 20px;
+  padding: 0px;
+  margin: 20px;
+  margin-top: 40px;
   display: flex;
   justify-content: center;  /* Zentriert die Filme horizontal */
   flex-wrap: wrap;  /* Ermöglicht es den Elementen, in die nächste Reihe zu gehen, wenn nicht genug Platz ist */

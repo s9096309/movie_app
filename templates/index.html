@@ -2,23 +2,37 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .movie {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px;
+            display: inline-block;
+            width: 200px;
+            text-align: center;
+        }
+        img {
+            width: 100%;
+            height: auto;
+        }
+    </style>
 </head>
 <body>
-    <div class="list-movies-title">
-        <h1>{{ title }}</h1>
-    </div>
-
-    <ul class="movie-grid">
+    <h1>{{ title }}</h1>
+    <div>
         {% for movie in movie_grid %}
-        <li class="movie">
-            <img src="{{ movie.poster }}" alt="Poster" class="movie-poster">
-            <h2 class="movie-title">{{ movie.title }} ({{ movie.year }})</h2>
-            <p class="movie-year">{{ movie.rating }} / 10</p>
-        </li>
+            <div class="movie">
+                <h2>{{ movie['title'] }}</h2>
+                <p>Rating: {{ movie['rating'] }}</p>
+                <p>Year: {{ movie['year'] }}</p>
+                {% if movie['poster_url'] %}
+                    <img src="{{ movie['poster_url'] }}" alt="{{ movie['title'] }}">
+                {% else %}
+                    <p>No image available</p>
+                {% endif %}
+            </div>
         {% endfor %}
-    </ul>
+    </div>
 </body>
 </html>

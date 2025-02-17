@@ -7,7 +7,7 @@ class IStorage(ABC):
         pass
 
     @abstractmethod
-    def add_movie(self, title):
+    def add_movie(self, title, rating, year, poster_url):
         pass
 
     @abstractmethod
@@ -15,5 +15,5 @@ class IStorage(ABC):
         pass
 
     @abstractmethod
-    def update_movie(self, title, rating):
+    def update_movie(self, title, rating, poster_url):
         pass

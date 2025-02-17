@@ -12,26 +12,21 @@ class StorageCsv(IStorage):
                 writer.writerow(["title", "rating", "year", "poster_url"])
 
     def list_movies(self):
-        """
-        Reads the CSV file and returns a dictionary of movies, including the poster URL.
-        """
+        """List all movies from the CSV file."""
         movies = {}
         try:
-            with open(self.filename, "r", newline="") as file:
-                reader = csv.DictReader(file)
-                print("CSV Header:", reader.fieldnames)  # Prints the header row
+            with open(self.filename, 'r', newline='', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
                 for row in reader:
-                    title = row["title"]
-                    # Prevent issues with empty year
-                    year = row["year"] if row["year"] else "Unknown"  # Default value for empty year
-                    poster_url = row["poster_url"] if row["poster_url"] else "No poster available"  # Default value if no poster
+                    title = row['title']
+                    # Hier wird sichergestellt, dass das Ergebnis ein Dictionary ist
                     movies[title] = {
-                        "rating": float(row["rating"]),
-                        "year": year,
-                        "poster_url": poster_url
+                        'rating': row['rating'],
+                        'year': row['year'],
+                        'poster_url': row['poster_url']
                     }
-        except Exception as e:
-            print("Error reading the CSV file:", e)
+        except FileNotFoundError:
+            print("CSV file not found.")
         return movies
 
     def add_movie(self, title, rating, year, poster_url):
@@ -43,20 +38,17 @@ class StorageCsv(IStorage):
             writer.writerow([title, rating, year, poster_url])
 
     def delete_movie(self, title):
-        """
-        Deletes a movie from the CSV file.
-        """
+        """Löscht einen Film basierend auf dem Titel."""
         movies = self.list_movies()
         if title in movies:
             del movies[title]
             with open(self.filename, "w", newline="") as file:
                 writer = csv.writer(file)
-                writer.writerow(["title", "rating", "year", "poster_url"])  # Write the header again
+                writer.writerow(["title", "rating", "year", "poster_url"])  # Überschreibe die Header-Zeile
                 for movie, data in movies.items():
-                    writer.writerow([movie, data["rating"], data["year"], data["poster_url"]])  # Save data including poster URL
+                    writer.writerow([movie, data["rating"], data["year"], data["poster_url"]])  # Speichere alle Daten
         else:
             print(f"The movie '{title}' was not found.")
-
     def update_movie(self, title, rating, poster_url):
         """
         Updates the rating and poster URL of a movie in the CSV file.

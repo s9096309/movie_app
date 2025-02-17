@@ -1,23 +1,38 @@
+import csv
+import json
+import os
+
 from flask import Flask, render_template
 
 app = Flask(__name__)
 
+DATA_SOURCE = os.getenv("MOVIE_DATA_SOURCE", "csv")  # Standard: CSV
+
+CSV_PATH = "data/movies.csv"
+JSON_PATH = "data/movies.json"
+
+
+def load_movies():
+    """Lädt die Filmdaten entweder aus CSV oder JSON."""
+    try:
+        if DATA_SOURCE == "json":
+            with open(JSON_PATH, encoding="utf-8") as jsonfile:
+                return json.load(jsonfile)
+        else:  # Standard: CSV
+            with open(CSV_PATH, newline="", encoding="utf-8") as csvfile:
+                reader = csv.DictReader(csvfile)
+                return list(reader)
+    except FileNotFoundError:
+        print(f"⚠ Fehler: Datei {CSV_PATH if DATA_SOURCE == 'csv' else JSON_PATH} nicht gefunden.")
+        return []
+
+
 @app.route('/')
 def index():
     title = "My Movie App"
-    movie_grid = [
-        {"poster": "https://m.media-amazon.com/images/M/MV5BMThlMDA3NDYtZGM2Zi00NmJhLThlYWItZjViZTkzZWU1ZWRiXkEyXkFqcGc@._V1_SX300.jpg",
-         "title": "La haine", "year": 1995, "rating": 8.1},
-        {"poster": "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg",
-         "title": "Inception", "year": 2010, "rating": 8.8},
-        {"poster": "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg",
-         "title": "Fight Club", "year": 1999, "rating": 8.8},
-        {"poster": "https://m.media-amazon.com/images/M/MV5BNDUzYjY0NmUtMDM4OS00Y2Q5LWJiODYtNTk0ZTk0YjZhMTg1XkEyXkFqcGc@._V1_SX300.jpg",
-         "title": "Scarface", "year": 1983, "rating": 8.3},
-        {"poster": "https://m.media-amazon.com/images/M/MV5BN2FjNWExYzEtY2YzOC00YjNlLTllMTQtNmIwM2Q1YzBhOWM1XkEyXkFqcGc@._V1_SX300.jpg",
-         "title": "Shutter Island", "year": 2010, "rating": 8.2}
-    ]
+    movie_grid = load_movies()
     return render_template('index_template.html', title=title, movie_grid=movie_grid)
+
 
 if __name__ == '__main__':
     app.run(debug=True)

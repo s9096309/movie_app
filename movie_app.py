@@ -1,33 +1,34 @@
 import random
 import matplotlib.pyplot as plt
 import requests
-import os
+
+from storage.storage_csv import StorageCsv
+from storage.storage_json import StorageJson
+
 
 class MovieApp:
-    def __init__(self, storage):
-        """Initializes the MovieApp with a storage object."""
-        self._storage = storage
+    def __init__(self):
+        self._storage = self._get_storage_object()  # Auswahl des Formats passiert hier
+        self.movies = self._storage.list_movies()
+
+    def _get_storage_object(self):
+        choice = input("Wählen Sie das Speichersystem (1 für CSV, 2 für JSON): ").strip()
+        if choice == "2":
+            return StorageJson("/Users/kevinhoffmann/PycharmProjects/movie_app/data/movies.json")
+        return StorageCsv("/Users/kevinhoffmann/PycharmProjects/movie_app/data/movies.csv")  # Standardmäßig CSV
 
     def _command_list_movies(self):
-        """Lists all movies in the database."""
-        movies = self._storage.list_movies()  # This already contains the poster_url
+        movies = self._storage.list_movies()  # Hole Filme aus dem Speicher
         if not movies:
-            print("No movies found.")
+            print("No movies in the database.")
         else:
-            # Ensure that 'None' is handled correctly for the year
-            sorted_movies = sorted(
-                movies.items(),
-                key=lambda x: (x[1].get('year') if x[1].get('year') is not None else float('inf')),
-                reverse=True
-            )
-
             print("Movies in Database:")
-            for index, (title, movie) in enumerate(sorted_movies, start=1):
-                year_display = movie['year'] if movie['year'] is not None else "Unknown"
-                poster_url = movie['poster_url']  # This comes from the list_movies method
-                print(f"{index}. {title} ({year_display}) Rating: {movie['rating']:.1f} - Poster URL: {poster_url}")
+            for index, movie_title in enumerate(movies, start=1):
+                movie = movies[movie_title]
+                print(
+                    f"{index}. {movie_title}, Rating: {movie['rating']}, Year: {movie['year']}, Poster URL: {movie['poster_url']}")
 
-    def add_movie(self):
+    def _command_add_movie(self):
         title = input("Enter the movie title: ")
         api_key = "1299a8a"
         url = f"http://www.omdbapi.com/?apikey={api_key}&t={title}"
@@ -38,50 +39,53 @@ class MovieApp:
                 data = response.json()
                 if data['Response'] == 'True':
                     movie_title = data['Title']
-                    year = data['Year']
-                    rating = data['imdbRating']
+                    # Überprüfen, ob das Jahr einen Bereich darstellt und das erste Jahr extrahieren
+                    year_str = data['Year']
+                    year = self._extract_year(year_str)
+                    rating = float(data['imdbRating']) if data[
+                                                              'imdbRating'] != 'N/A' else 0.0  # Sicherstellen, dass die Bewertung eine Zahl ist
                     poster_url = data['Poster'] if data['Poster'] != 'N/A' else 'No poster available'
-                    # Save the movie data to storage
+
+                    # Speichern des Films
                     self._storage.add_movie(movie_title, rating, year, poster_url)
-                    print(f"Movie '{movie_title}' added successfully!")
+                    print(f"Movie '{movie_title}', released in {year}, with rating {rating} added successfully!")
                 else:
                     print(f"Error: {data['Error']}")
             else:
                 print("Error: Unable to fetch data from OMDb API.")
         except requests.exceptions.RequestException as e:
             print(f"Error: Unable to connect to OMDb API. {e}")
+        except ValueError as e:
+            print(f"Error processing data: {e}")
+
+    def _extract_year(self, year_str):
+        """Extracts the first year from a year range (e.g. '2006–2013')."""
+        if '–' in year_str:
+            return int(year_str.split('–')[0])  # Falls es einen Bereich gibt, nimm das erste Jahr
+        return int(year_str)  # Ansonsten nimm das Jahr wie es ist
 
     def _command_delete_movie(self):
-        """Deletes a movie from the database."""
-        movies = self._storage.list_movies()
-        if not movies:
-            print("No movies to delete.")
-            return
+        # Vorherige Logik bleibt
+        movies = self._storage.list_movies()  # Hole Filme aus dem Speicher
+        movie_titles = list(movies.keys())  # Liste der Filmtitel
+        if movie_titles:
+            print("Movies in Database:")
+            for idx, title in enumerate(movie_titles, 1):
+                movie = movies[title]
+                print(
+                    f"{idx}. {title}, Rating: {movie['rating']}, Year: {movie['year']}, Poster URL: {movie['poster_url']}")
 
-        self._command_list_movies()
-
-        try:
-            ask_user_index = int(input("Which movie do you want to delete? Enter a number: "))
-            ask_user_index -= 1  # Convert to zero-based index
-
-            if not (0 <= ask_user_index < len(movies)):
-                print("Invalid input. Please enter a valid number.")
-                return
-
-            sorted_movies = sorted(movies.items(),
-                                   key=lambda x: (x[1].get('year') if x[1].get('year') is not None else float('inf')),
-                                   reverse=True)
-
-            movie_title = sorted_movies[ask_user_index][0]
-
-            confirm = input(f"Are you sure you want to delete '{movie_title}'? (y/n): ").strip().lower()
-            if confirm == 'y':
-                self._storage.delete_movie(movie_title)
-                print(f"'{movie_title}' has been deleted from the list.")
+            movie_index = int(input("Which movie do you want to delete? Enter a number: ")) - 1
+            if 0 <= movie_index < len(movie_titles):
+                movie_title = movie_titles[movie_index]
+                confirmation = input(f"Are you sure you want to delete '{movie_title}'? (y/n): ")
+                if confirmation.lower() == "y":
+                    self._storage.delete_movie(movie_title)  # Verwende die delete_movie Methode
+                    print(f"'{movie_title}' has been deleted.")
             else:
-                print(f"'{movie_title}' was not deleted.")
-        except ValueError:
-            print("Invalid input. Please enter a numeric value.")
+                print("Invalid movie choice.")
+        else:
+            print("No movies available to delete.")
 
     def generate_website(self):
         """Generates an HTML file displaying the movies."""
@@ -128,18 +132,31 @@ class MovieApp:
             print("No movies in the database to analyze.")
             return
 
-        ratings = [movie['rating'] for movie in movies.values()]
+        # Konvertiere alle Bewertungen in floats, um sicherzustellen, dass keine Strings dabei sind
+        ratings = []
+        for movie in movies.values():
+            try:
+                ratings.append(float(movie['rating']))
+            except ValueError:
+                print(f"Warning: Invalid rating for movie '{movie['title']}', skipping.")
+                continue
+
+        if not ratings:  # Wenn keine gültigen Bewertungen vorhanden sind
+            print("No valid ratings to analyze.")
+            return
+
         avg_rating = sum(ratings) / len(ratings)
         sorted_ratings = sorted(ratings)
 
+        # Median berechnen
         median_rating = sorted_ratings[len(ratings) // 2] if len(ratings) % 2 == 1 else \
             (sorted_ratings[len(ratings) // 2 - 1] + sorted_ratings[len(ratings) // 2]) / 2
 
         max_rating = max(ratings)
         min_rating = min(ratings)
 
-        best_movies = [title for title, movie in movies.items() if movie['rating'] == max_rating]
-        worst_movies = [title for title, movie in movies.items() if movie['rating'] == min_rating]
+        best_movies = [title for title, movie in movies.items() if float(movie['rating']) == max_rating]
+        worst_movies = [title for title, movie in movies.items() if float(movie['rating']) == min_rating]
 
         print("\nStatistics:")
         print(f"Average rating: {avg_rating:.2f}")
@@ -206,20 +223,21 @@ class MovieApp:
             print("No valid ratings found to display.")
 
     def run(self):
-        """Runs the MovieApp interface."""
+        print("Movie App started with:", type(self._storage).__name__)
+
         while True:
             print("""*** Welcome to My Movies Database ***
-    1. List movies
-    2. Add movie
-    3. Delete movie
-    4. Generate Website
-    5. Stats
-    6. Random movie
-    7. Search movie
-    8. Sort Movies
-    9. Show as histogram
-    0. Exit
-            """)
+       1. List movies
+       2. Add movie
+       3. Delete movie
+       4. Generate Website
+       5. Stats
+       6. Random movie
+       7. Search movie
+       8. Sort Movies
+       9. Show as histogram
+       0. Exit
+               """)
             user_input = input("Enter choice (0-9): ")
 
             while not user_input.isdigit() or not (0 <= int(user_input) <= 9):
@@ -230,9 +248,9 @@ class MovieApp:
             if user_input == 1:
                 self._command_list_movies()
             elif user_input == 2:
-                self.add_movie()
+                self._command_add_movie()
             elif user_input == 3:
-                self._command_delete_movie()
+                self._command_delete_movie()  # Aufruf der Methode ohne Argumente
             elif user_input == 4:
                 self.generate_website()
             elif user_input == 5:
