@@ -50,12 +50,17 @@ h1 {
 }
 
 .movie-title {
-    font-size: 16px; /* Kleiner als vorher */
+    font-size: 16px;
     font-weight: bold;
     margin-top: 8px;
 }
 
 .movie-year {
-    font-size: 0.8em;
+    font-size: 1.0em;
     color: #999;
+}
+
+.movie-rating {
+    font-size: 14px;
+    font-weight: bold;
 }
