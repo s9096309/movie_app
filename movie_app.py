@@ -1,24 +1,44 @@
 import random
 import matplotlib.pyplot as plt
 import requests
-
+import os
+from dotenv import load_dotenv
 from storage.storage_csv import StorageCsv
 from storage.storage_json import StorageJson
 
 
+load_dotenv()
+
 class MovieApp:
     def __init__(self):
-        self._storage = self._get_storage_object()  # Auswahl des Formats passiert hier
+        self.api_key = os.getenv("OMDB_API_KEY")  # Load API key from .env
+        if not self.api_key:
+            print("API key missing!")
+            return
+        self._storage = self._get_storage_object()  # Choose the storage system (CSV/JSON)
         self.movies = self._storage.list_movies()
 
     def _get_storage_object(self):
-        choice = input("Wählen Sie das Speichersystem (1 für CSV, 2 für JSON): ").strip()
+        """
+        Prompts the user to choose between CSV or JSON storage for movie data.
+        Returns an instance of the appropriate storage system class.
+
+        Returns:
+            StorageCsv or StorageJson: An instance of the chosen storage system.
+        """
+        choice = input("Choose storage system (1 for CSV, 2 for JSON): ").strip()
+
+        while choice not in ['1', '2']:
+            print("Invalid input. Please choose 1 for CSV or 2 for JSON.")
+            choice = input("Choose storage system (1 for CSV, 2 for JSON): ").strip()
+
+        # Select the appropriate storage system based on user input
         if choice == "2":
             return StorageJson("/Users/kevinhoffmann/PycharmProjects/movie_app/data/movies.json")
-        return StorageCsv("/Users/kevinhoffmann/PycharmProjects/movie_app/data/movies.csv")  # Standardmäßig CSV
+        return StorageCsv("/Users/kevinhoffmann/PycharmProjects/movie_app/data/movies.csv")  # Default is CSV
 
     def _command_list_movies(self):
-        movies = self._storage.list_movies()  # Hole Filme aus dem Speicher
+        movies = self._storage.list_movies()  # Retrieve movies from the storage
         if not movies:
             print("No movies in the database.")
         else:
@@ -30,8 +50,11 @@ class MovieApp:
 
     def _command_add_movie(self):
         title = input("Enter the movie title: ")
-        api_key = "1299a8a"
-        url = f"http://www.omdbapi.com/?apikey={api_key}&t={title}"
+        if not self.api_key:
+            print("Error: OMDB API key is missing!")
+            return
+
+        url = f"http://www.omdbapi.com/?apikey={self.api_key}&t={title}"
 
         try:
             response = requests.get(url)
@@ -39,14 +62,19 @@ class MovieApp:
                 data = response.json()
                 if data['Response'] == 'True':
                     movie_title = data['Title']
-                    # Überprüfen, ob das Jahr einen Bereich darstellt und das erste Jahr extrahieren
+                    # Check if the movie already exists in the database
+                    existing_movies = self._storage.list_movies()
+                    if movie_title in existing_movies:
+                        print(f"Movie '{movie_title}' already exists in the database.")
+                        return  # Exit if the movie is already in the database
+
+                    # Check if the year is a range and extract the first year
                     year_str = data['Year']
                     year = self._extract_year(year_str)
-                    rating = float(data['imdbRating']) if data[
-                                                              'imdbRating'] != 'N/A' else 0.0  # Sicherstellen, dass die Bewertung eine Zahl ist
+                    rating = float(data['imdbRating']) if data['imdbRating'] != 'N/A' else 0.0
                     poster_url = data['Poster'] if data['Poster'] != 'N/A' else 'No poster available'
 
-                    # Speichern des Films
+                    # Save the movie
                     self._storage.add_movie(movie_title, rating, year, poster_url)
                     print(f"Movie '{movie_title}', released in {year}, with rating {rating} added successfully!")
                 else:
@@ -61,31 +89,42 @@ class MovieApp:
     def _extract_year(self, year_str):
         """Extracts the first year from a year range (e.g. '2006–2013')."""
         if '–' in year_str:
-            return int(year_str.split('–')[0])  # Falls es einen Bereich gibt, nimm das erste Jahr
-        return int(year_str)  # Ansonsten nimm das Jahr wie es ist
+            return int(year_str.split('–')[0])  # If there is a range, take the first year
+        return int(year_str)  # Otherwise, take the year as it is
 
     def _command_delete_movie(self):
-        # Vorherige Logik bleibt
-        movies = self._storage.list_movies()  # Hole Filme aus dem Speicher
-        movie_titles = list(movies.keys())  # Liste der Filmtitel
-        if movie_titles:
-            print("Movies in Database:")
-            for idx, title in enumerate(movie_titles, 1):
-                movie = movies[title]
-                print(
-                    f"{idx}. {title}, Rating: {movie['rating']}, Year: {movie['year']}, Poster URL: {movie['poster_url']}")
+        """
+        Asks the user for a movie number to delete, confirms, and removes it from the database.
+        """
+        movies = self._storage.list_movies()
 
-            movie_index = int(input("Which movie do you want to delete? Enter a number: ")) - 1
-            if 0 <= movie_index < len(movie_titles):
-                movie_title = movie_titles[movie_index]
-                confirmation = input(f"Are you sure you want to delete '{movie_title}'? (y/n): ")
-                if confirmation.lower() == "y":
-                    self._storage.delete_movie(movie_title)  # Verwende die delete_movie Methode
-                    print(f"'{movie_title}' has been deleted.")
-            else:
-                print("Invalid movie choice.")
-        else:
+        if not movies:
             print("No movies available to delete.")
+            return
+
+        print("Movies in Database:")
+        for idx, (title, movie) in enumerate(movies.items(), 1):
+            print(
+                f"{idx}. {title}, Rating: {movie['rating']}, Year: {movie['year']}, Poster URL: {movie['poster_url']}")
+
+        while True:
+            try:
+                movie_index = int(input("Which movie do you want to delete? Enter a number: ")) - 1
+                if 0 <= movie_index < len(movies):
+                    movie_to_delete = list(movies.keys())[movie_index]
+
+                    # Confirmation of deletion
+                    confirmation = input(f"Are you sure you want to delete '{movie_to_delete}'? (y/n): ").lower()
+                    if confirmation == 'y':
+                        self._storage.delete_movie(movie_to_delete)
+                        print(f"Movie '{movie_to_delete}' deleted successfully.")
+                    else:
+                        print(f"Movie '{movie_to_delete}' was not deleted.")
+                    break
+                else:
+                    print(f"Invalid number. Please enter a number between 1 and {len(movies)}.")
+            except ValueError:
+                print("Invalid input. Please enter a valid number.")
 
     def generate_website(self):
         """Generates an HTML file displaying the movies."""
@@ -132,7 +171,7 @@ class MovieApp:
             print("No movies in the database to analyze.")
             return
 
-        # Konvertiere alle Bewertungen in floats, um sicherzustellen, dass keine Strings dabei sind
+        # Convert all ratings to floats to ensure there are no strings
         ratings = []
         for movie in movies.values():
             try:
@@ -141,14 +180,14 @@ class MovieApp:
                 print(f"Warning: Invalid rating for movie '{movie['title']}', skipping.")
                 continue
 
-        if not ratings:  # Wenn keine gültigen Bewertungen vorhanden sind
+        if not ratings:  # If there are no valid ratings
             print("No valid ratings to analyze.")
             return
 
         avg_rating = sum(ratings) / len(ratings)
         sorted_ratings = sorted(ratings)
 
-        # Median berechnen
+        # Calculate median
         median_rating = sorted_ratings[len(ratings) // 2] if len(ratings) % 2 == 1 else \
             (sorted_ratings[len(ratings) // 2 - 1] + sorted_ratings[len(ratings) // 2]) / 2
 
@@ -165,15 +204,20 @@ class MovieApp:
         print(f"Worst movie(s): {', '.join(worst_movies)} with a rating of {min_rating}")
 
     def _command_search_movie(self):
-        """Searches for movies by title or keyword."""
-        search_term = input("Enter the movie title or keyword to search: ").strip().lower()
+        """
+        Prompts the user to enter a movie title and searches for it in the database.
+        """
+        search_title = input("Enter the movie title to search for: ").strip()
         movies = self._storage.list_movies()
-        found_movies = {title: info for title, info in movies.items() if search_term in title.lower()}
-        if found_movies:
-            for title, info in found_movies.items():
-                print(f"{title} ({info['year']}) - Rating: {info['rating']}")
+
+        matching_movies = {title: movie for title, movie in movies.items() if search_title.lower() in title.lower()}
+
+        if not matching_movies:
+            print(f"No movies found matching '{search_title}'.")
         else:
-            print("No movies found with that title.")
+            print(f"Movies matching '{search_title}':")
+            for title, movie in matching_movies.items():
+                print(f"{title} - Rating: {movie['rating']}, Year: {movie['year']}")
 
     def _command_random_movie(self):
         """Displays a random movie from the database."""
@@ -201,68 +245,70 @@ class MovieApp:
         for title, info in sorted_movies:
             print(f"{title} ({info['year']}) - Rating: {info['rating']}")
 
-    def _command_show_as_histogram(self):
-        """Displays movie ratings as a histogram."""
+    def _command_create_histogram(self):
+        """Creates a histogram of the movie ratings."""
         movies = self._storage.list_movies()
         if not movies:
-            print("No movies to display.")
+            print("No movies to create histogram.")
             return
 
-        ratings = []
-        for title, movie in movies.items():
-            if isinstance(movie, dict) and 'rating' in movie and movie['rating'] is not None:
-                ratings.append(movie['rating'])
+        ratings = [movie['rating'] for movie in movies.values()]
 
-        if ratings:
-            plt.hist(ratings, bins=10, edgecolor='black')
-            plt.title('Movie Ratings Histogram')
-            plt.xlabel('Rating')
-            plt.ylabel('Frequency')
-            plt.show()
+        if not ratings:
+            print("No valid ratings to create histogram.")
+            return
+
+        plt.hist(ratings, bins=10, edgecolor='black')
+        plt.title("Movie Rating Distribution")
+        plt.xlabel("Rating")
+        plt.ylabel("Frequency")
+
+        save_option = input("Do you want to save the histogram? (y/n): ").strip().lower()
+        if save_option == 'y':
+            file_path = input("Enter the file path to save the histogram (e.g., 'histogram.png'): ").strip()
+            plt.savefig(file_path)
+            print(f"Histogram saved to {file_path}.")
         else:
-            print("No valid ratings found to display.")
+            plt.show()
 
     def run(self):
-        print("Movie App started with:", type(self._storage).__name__)
-
+        """Starts the movie app and lets the user choose a command."""
         while True:
-            print("""*** Welcome to My Movies Database ***
-       1. List movies
-       2. Add movie
-       3. Delete movie
-       4. Generate Website
-       5. Stats
-       6. Random movie
-       7. Search movie
-       8. Sort Movies
-       9. Show as histogram
-       0. Exit
-               """)
-            user_input = input("Enter choice (0-9): ")
+            print("\nCommands:")
+            print("1. List movies")
+            print("2. Add movie")
+            print("3. Delete movie")
+            print("4. Movie stats")
+            print("5. Search movie")
+            print("6. Random movie")
+            print("7. Sort movies")
+            print("8. Create histogram")
+            print("0. Exit")
 
-            while not user_input.isdigit() or not (0 <= int(user_input) <= 9):
-                user_input = input("Invalid choice. Please enter a number between 0 and 9: ")
+            command = input("Enter a command number: ").strip()
 
-            user_input = int(user_input)
-
-            if user_input == 1:
-                self._command_list_movies()
-            elif user_input == 2:
-                self._command_add_movie()
-            elif user_input == 3:
-                self._command_delete_movie()  # Aufruf der Methode ohne Argumente
-            elif user_input == 4:
-                self.generate_website()
-            elif user_input == 5:
-                self._command_movie_stats()
-            elif user_input == 6:
-                self._command_random_movie()
-            elif user_input == 7:
-                self._command_search_movie()
-            elif user_input == 8:
-                self._command_sort_movies()
-            elif user_input == 9:
-                self._command_show_as_histogram()
-            elif user_input == 0:
-                print("Exiting MovieApp.")
+            if command == "0":
+                print("Exiting the application.")
                 break
+            elif command == "1":
+                self._command_list_movies()
+            elif command == "2":
+                self._command_add_movie()
+            elif command == "3":
+                self._command_delete_movie()
+            elif command == "4":
+                self._command_movie_stats()
+            elif command == "5":
+                self._command_search_movie()
+            elif command == "6":
+                self._command_random_movie()
+            elif command == "7":
+                self._command_sort_movies()
+            elif command == "8":
+                self._command_create_histogram()
+            else:
+                print("Invalid command, try again.")
+
+if __name__ == "__main__":
+    app = MovieApp()
+    app.run()

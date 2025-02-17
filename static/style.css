@@ -1,61 +1,61 @@
+/* Body Styling */
 body {
-  background: #F5F5F0;
-  color: black;
-  font-family: Monaco, monospace;
+    background: #F5F5F0;
+    color: black;
+    font-family: Monaco, monospace;
+    margin: 0;
+    padding: 0;
 }
 
-.list-movies-title {
-  padding: 15px 0;
-  background: #009B50;
-  color: white;
-  text-align: center;
-  font-size: 18pt;
+/* Movie List Title Styling */
+h1 {
+    padding: 10px 0;
+    background: #009B50;
+    color: white;
+    text-align: center;
+    font-size: 16pt;
 }
 
+/* Movie Grid Container */
 .movie-grid {
-  list-style-type: none;
-  padding: 0px;
-  margin: 20px;
-  margin-top: 40px;
-  display: flex;
-  justify-content: center;  /* Zentriert die Filme horizontal */
-  flex-wrap: wrap;  /* Ermöglicht es den Elementen, in die nächste Reihe zu gehen, wenn nicht genug Platz ist */
-  gap: 20px;  /* Abstand zwischen den einzelnen Film-Elementen */
-  max-width: 100%;  /* Container soll die volle Breite einnehmen, ohne zu überlaufen */
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 20px;
+    margin-top: 20px;
 }
 
-.movie-grid li {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 0;
-  text-align: center;
-  width: 160px;  /* Breite der einzelnen Film-Elemente */
-  box-sizing: border-box;  /* Stellt sicher, dass Padding und Border nicht die Gesamtbreite beeinflussen */
-}
-
+/* Individual Movie Styling */
 .movie {
-  width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 160px;
+    text-align: center;
 }
 
-.movie-title,
-.movie-year {
-  font-size: 0.9em;
-  margin-top: 10px;
+/* Movie Poster Styling */
+.movie-poster img {
+    width: 128px;
+    height: 193px;
+    object-fit: cover;
+    border-radius: 5px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+}
+
+/* Movie Details Styling */
+.movie-details {
+    text-align: center;
 }
 
 .movie-title {
-  font-weight: bold;
+    font-size: 16px; /* Kleiner als vorher */
+    font-weight: bold;
+    margin-top: 8px;
 }
 
 .movie-year {
-  color: #999;
-}
-
-.movie-poster {
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
-  width: 128px;
-  height: 193px;
-  object-fit: cover;
-  border-radius: 5px;
+    font-size: 0.8em;
+    color: #999;
 }

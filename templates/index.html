@@ -1,36 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+    <link rel="stylesheet" href="static/style.css">
     <meta charset="UTF-8">
     <title>{{ title }}</title>
-    <style>
-        .movie {
-            border: 1px solid #ccc;
-            padding: 10px;
-            margin: 10px;
-            display: inline-block;
-            width: 200px;
-            text-align: center;
-        }
-        img {
-            width: 100%;
-            height: auto;
-        }
-    </style>
 </head>
+
 <body>
     <h1>{{ title }}</h1>
-    <div>
+    <div class="movie-grid">
         {% for movie in movie_grid %}
             <div class="movie">
-                <h2>{{ movie['title'] }}</h2>
-                <p>Rating: {{ movie['rating'] }}</p>
-                <p>Year: {{ movie['year'] }}</p>
-                {% if movie['poster_url'] %}
-                    <img src="{{ movie['poster_url'] }}" alt="{{ movie['title'] }}">
-                {% else %}
-                    <p>No image available</p>
-                {% endif %}
+                <div class="movie-poster">
+                    {% if movie['poster_url'] %}
+                        <img src="{{ movie['poster_url'] }}" alt="{{ movie['title'] }}">
+                    {% else %}
+                        <p>No image available</p>
+                    {% endif %}
+                </div>
+                <div class="movie-details">
+                    <p class="movie-title">{{ movie['title'] }}</p>
+                    <p class="movie-year">{{ movie['year'] }}</p>
+                </div>
             </div>
         {% endfor %}
     </div>
