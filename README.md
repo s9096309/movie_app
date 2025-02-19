@@ -1,72 +1,91 @@
+**Movie Database Project**
 
----
+**Purpose**
 
-## Movie Database Project
+This project is a simple movie database application that stores movies either in a JSON or CSV file. A dynamic website is generated to display the movies with their posters, titles, and release years.
 
-### Purpose
-This project is a simple movie database application that stores movies in a JSON file and generates a dynamic website displaying the movies with their posters, titles, and release years.
+**Features**
 
-### Features
-- Store and manage movies in a JSON file (`movies.json`).
-- Generate a dynamic HTML page (`index.html`) displaying the movie collection using Flask.
-- Responsive design with CSS for a clean layout.
-- Automatically fetch movie posters using stored URLs.
-- A Flask-powered backend to manage movie data (add, update, and delete movies).
+- Storing and managing movies in a JSON (movies.json) or CSV file (movies.csv).
+- Generation of a dynamic HTML page (index.html) using Flask.
+- Selection between JSON or CSV data source via the configuration file (config.json).
+- Responsive design for clear display.
+- Automatic display of movie posters based on saved URLs.
+- Flask backend for managing movie data (Add, Update, Delete).
 
-### Setup
+**Setup**
 
-#### 1. Clone the repository:
+1. Clone the repository:
 ```bash
 git clone https://github.com/s9096309/movie_app.git
 cd movie_app
 ```
 
-#### 2. Create a virtual environment (optional but recommended):
+2. Create a virtual environment (recommended):
 ```bash
 python -m venv venv
-source venv/bin/activate  # On Windows use: venv\Scripts\activate
+source venv/bin/activate  # For Windows: venv\Scripts\activate
 ```
 
-#### 3. Install dependencies:
+3. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-#### 4. Run the Flask application:
+4. Adjust configuration:
+The config.json file determines whether the data is loaded from a JSON or CSV file:
+
+```json
+{
+    "storage_type": "json",  // Alternatively: "csv"
+    "storage_file": "movies.json"
+}
+```
+If CSV data is to be used, set `"storage_type": "csv"` and change `"storage_file"` accordingly.
+
+5. Start the Flask application:
 ```bash
 python main.py
 ```
+The local development server runs at http://127.0.0.1:5000/.  
+The generated website will display the movie data with posters and details.
 
-- This will start a local development server at `http://127.0.0.1:5000/`.
-- You can view the movie database through your web browser by navigating to that address.
+**Data Format**
 
-#### 5. View the generated website:
-- The dynamic website (`index.html`) will be rendered by Flask when you visit the app in your browser.
-- The website will automatically display the movie collection, including posters and details fetched from the `movies.json` file.
+*JSON (movies.json)*:
+```json
+{
+    "Inception": {
+        "year": 2010,
+        "rating": 8.8,
+        "poster_url": "https://image_url.com",
+        "imdbID": "tt1375666"
+    }
+}
+```
 
-### Usage
-- Movies are stored in `movies.json` in the format:
-  ```json
-  {
-      "Inception": {
-          "year": 2010,
-          "rating": 8.8,
-          "poster_url": "https://image_url.com"
-      }
-  }
-  ```
-- Use the Flask-powered app to manage movies, including adding new movies, updating ratings, or deleting entries.
-- Run `main.py` to start the Flask server and interact with the movie database via the web interface.
+*CSV (movies.csv)*:
+```csv
+title,rating,year,poster_url,imdbID
+Inception,8.8,2010,https://image_url.com,tt1375666
+```
 
-### Requirements
+**Web App Features**
+
+- Add, update, and delete movies
+- Load movies from JSON or CSV
+- Dynamic HTML generation with Flask
+- IMDb links for movies
+- Optional rating visualization with Matplotlib
+
+**Requirements**
+
 This project requires Python 3.x and the following dependencies:
-- Flask==3.1.0 (for serving the dynamic web app)
-- Requests==2.32.3 (for fetching data, if needed)
-- Matplotlib~=3.9.2 (for optional rating visualizations)
 
-### License
+- Flask==3.1.0
+- Requests==2.32.3
+- Matplotlib~=3.9.2
+
+**License**
+
 This project is licensed under the MIT License.
-
----
-
-This version makes it clear that Flask is used to power the dynamic web application and includes setup instructions for running the server. Let me know if you'd like to adjust or add anything else!

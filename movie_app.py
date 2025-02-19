@@ -47,6 +47,10 @@ class MovieApp:
             return StorageCsv(csv_file_path)
         else:
             json_file_path = os.path.join(BASE_DIR, "data", "movies.json")
+            if not os.path.exists(json_file_path):  # Check if the JSON file exists
+                print("JSON file not found. Creating a new file.")
+                with open(json_file_path, 'w') as file:
+                    file.write("{}")  # Create an empty JSON file if it doesn't exist
             return StorageJson(json_file_path)
 
     def _command_list_movies(self):

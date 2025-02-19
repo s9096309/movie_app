@@ -64,6 +64,7 @@ class StorageCsv(IStorage):
                     f"{index}. {title}, Rating: {data['rating']}, Year: {data['year']}, Poster URL: {data['poster_url']}, IMDb Link: {data['imdbID']}")
         else:
             print("No movies found.")
+
     def add_movie(self, title, rating, year, poster_url, imdbID):
         """Adds a new movie to the database if it doesn't already exist."""
         print(f"DEBUG: Adding movie: {title}, IMDb-ID: {imdbID}")
@@ -90,8 +91,10 @@ class StorageCsv(IStorage):
             del movies[title]
             self._write_to_file(movies)
             print(f"Movie '{title}' successfully deleted.")
+            return True
         else:
             print(f"Movie '{title}' not found.")
+            return False
 
     def update_movie(self, title, rating, poster_url):
         """Updates the rating and poster URL of a movie."""
@@ -101,5 +104,7 @@ class StorageCsv(IStorage):
             movies[title]["poster_url"] = poster_url
             self._write_to_file(movies)
             print(f"Movie '{title}' updated successfully.")
+            return True
         else:
             print(f"The movie '{title}' was not found.")
+            return False

@@ -4,18 +4,40 @@ import os
 from dotenv import load_dotenv
 from flask import Flask, render_template
 
+# Initialize Flask app
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
-
-load_dotenv()  # Ensure environment variables are loaded
-DATA_SOURCE = os.getenv("MOVIE_DATA_SOURCE", "csv")  # Standard: CSV
-print(f"🔍 DATA_SOURCE set to: {DATA_SOURCE}")  # Debugging
-
-
+# Define file paths for CSV and JSON
 CSV_PATH = "data/movies.csv"
 JSON_PATH = "data/movies.json"
 
+# Load environment variables from .env file (if any)
+load_dotenv()
+
+# Define the path to the config.json file
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_FILE = os.path.join(BASE_DIR, "config", "config.json")
+
+def load_data_source():
+    """Load the data source preference from config.json."""
+    try:
+        with open(CONFIG_FILE, "r") as f:
+            config = json.load(f)
+            return config.get("DATA_SOURCE", "csv")  # Default to 'csv' if not set
+    except FileNotFoundError:
+        return "csv"  # Default value if config.json does not exist
+
+# Load data source from config.json first
+DATA_SOURCE = load_data_source()
+print(f"🔍 DATA_SOURCE set to: {DATA_SOURCE}")
+
+# Optionally, you can still load from the .env file as a fallback,
+# but only if the config.json does not contain the data source.
+
+# Ensure you're using the correct data source
+if DATA_SOURCE is None:
+    DATA_SOURCE = os.getenv("MOVIE_DATA_SOURCE", "csv")  # Fallback to .env if not set in config.json
 
 def load_movies():
     """Loads the movie data either from CSV or JSON."""
@@ -42,17 +64,16 @@ def load_movies():
         print(f"Error loading data: {e}.")
         return []
 
-
 @app.route('/')
 def index():
+    """Route to render the movie grid on the homepage."""
     title = "My Movie App"
     movie_grid = load_movies()
     print("Rendering movie grid:", movie_grid)  # Debugging line to check the data passed to template
     return render_template('index_template.html', title=title, movie_grid=movie_grid)
 
-
-load_dotenv()
-
+# Load Flask secret key from .env file
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
+
 if __name__ == '__main__':
     app.run(debug=True)

@@ -27,6 +27,7 @@ class StorageJson(IStorage):
                     movies = {}
         except FileNotFoundError:
             print("JSON file not found. Creating a new movie list.")
+            movies = {}  # Initialize with an empty dictionary
         except (IOError, json.JSONDecodeError) as e:
             print(f"Error reading JSON file: {e}. Resetting movies list.")
 
@@ -47,11 +48,10 @@ class StorageJson(IStorage):
         """Adds a new movie to the JSON file if it does not already exist."""
         movies = self.load_movies()
 
-        # Check if the movie already exists (same title or same IMDb ID)
-        for movie in movies.values():
-            if movie.get("imdbID") == imdbID:
-                print(f"Movie '{title}' is already in the database.")
-                return False  # Return False if the movie is already in the database
+        # Check if the movie already exists (by IMDb ID)
+        if any(movie.get("imdbID") == imdbID for movie in movies.values()):
+            print(f"Movie '{title}' is already in the database.")
+            return False  # Return False if the movie is already in the database
 
         # Add the movie if it does not exist yet
         movies[title] = {
