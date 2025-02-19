@@ -5,40 +5,52 @@ import os
 from dotenv import load_dotenv
 from storage.storage_csv import StorageCsv
 from storage.storage_json import StorageJson
-
+from config import load_data_source, save_data_source, BASE_DIR
 
 load_dotenv()
 
 class MovieApp:
     def __init__(self):
         self.api_key = os.getenv("OMDB_API_KEY")  # Load API key from .env
+        self.ask_user_for_data_source()
+        # If no valid selection was made, ask the user
+        if self.data_source not in ['csv', 'json']:
+            self.ask_for_data_source()
         if not self.api_key:
             print("API key missing!")
             return
-        self._storage = self._get_storage_object()  # Choose the storage system (CSV/JSON)
-        self.movies = self._storage.list_movies()
+        self._storage = self.get_storage_object()  # Choose the storage system (CSV/JSON)
+        self.movies = self._storage.load_movies()
 
-    def _get_storage_object(self):
-        """
-        Prompts the user to choose between CSV or JSON storage for movie data.
-        Returns an instance of the appropriate storage system class.
-
-        Returns:
-            StorageCsv or StorageJson: An instance of the chosen storage system.
-        """
+    def ask_user_for_data_source(self):
+        """Asks the user for their storage choice and saves it."""
         choice = input("Choose storage system (1 for CSV, 2 for JSON): ").strip()
 
         while choice not in ['1', '2']:
             print("Invalid input. Please choose 1 for CSV or 2 for JSON.")
             choice = input("Choose storage system (1 for CSV, 2 for JSON): ").strip()
 
-        # Select the appropriate storage system based on user input
-        if choice == "2":
-            return StorageJson("/Users/kevinhoffmann/PycharmProjects/movie_app/data/movies.json")
-        return StorageCsv("/Users/kevinhoffmann/PycharmProjects/movie_app/data/movies.csv")  # Default is CSV
+        # Save the chosen data source
+        self.data_source = "csv" if choice == "1" else "json"
+        save_data_source(self.data_source)  # Save the choice to config.json
+
+        print(f"Data source selected: {'CSV' if self.data_source == 'csv' else 'JSON'}")
+
+    def get_storage_object(self):
+        """Returns the appropriate storage object based on the user's choice."""
+        if self.data_source == "csv":
+            csv_file_path = os.path.join(BASE_DIR, "data", "movies.csv")
+            if not os.path.exists(csv_file_path):
+                print("CSV file not found. Creating a new file.")
+                with open(csv_file_path, 'w') as file:
+                    file.write("")  # Create an empty CSV file if it doesn't exist
+            return StorageCsv(csv_file_path)
+        else:
+            json_file_path = os.path.join(BASE_DIR, "data", "movies.json")
+            return StorageJson(json_file_path)
 
     def _command_list_movies(self):
-        movies = self._storage.list_movies()  # Retrieve movies from the storage
+        movies = self._storage.load_movies()  # Retrieve movies from the storage
         if not movies:
             print("No movies in the database.")
         else:
@@ -62,21 +74,15 @@ class MovieApp:
                 data = response.json()
                 if data['Response'] == 'True':
                     movie_title = data['Title']
-                    # Check if the movie already exists in the database
-                    existing_movies = self._storage.list_movies()
-                    if movie_title in existing_movies:
-                        print(f"Movie '{movie_title}' already exists in the database.")
-                        return  # Exit if the movie is already in the database
-
                     # Check if the year is a range and extract the first year
                     year_str = data['Year']
                     year = self._extract_year(year_str)
                     rating = float(data['imdbRating']) if data['imdbRating'] != 'N/A' else 0.0
                     poster_url = data['Poster'] if data['Poster'] != 'N/A' else 'No poster available'
+                    imdbID = data['imdbID'] if data['imdbID'] else 'No IMDb ID available'
 
                     # Save the movie
-                    self._storage.add_movie(movie_title, rating, year, poster_url)
-                    print(f"Movie '{movie_title}', released in {year}, with rating {rating} added successfully!")
+                    self._storage.add_movie(movie_title, rating, year, poster_url, imdbID)
                 else:
                     print(f"Error: {data['Error']}")
             else:
@@ -96,7 +102,7 @@ class MovieApp:
         """
         Asks the user for a movie number to delete, confirms, and removes it from the database.
         """
-        movies = self._storage.list_movies()
+        movies = self._storage.load_movies()
 
         if not movies:
             print("No movies available to delete.")
@@ -117,7 +123,6 @@ class MovieApp:
                     confirmation = input(f"Are you sure you want to delete '{movie_to_delete}'? (y/n): ").lower()
                     if confirmation == 'y':
                         self._storage.delete_movie(movie_to_delete)
-                        print(f"Movie '{movie_to_delete}' deleted successfully.")
                     else:
                         print(f"Movie '{movie_to_delete}' was not deleted.")
                     break
@@ -126,13 +131,13 @@ class MovieApp:
             except ValueError:
                 print("Invalid input. Please enter a valid number.")
 
-    def generate_website(self):
+    def _command_generate_website(self):
         """Generates an HTML file displaying the movies."""
         try:
-            with open("templates/index_template.html", "r", encoding="utf-8") as template_file:
+            with open("templates/index_template.html", encoding="utf-8") as template_file:
                 template = template_file.read()
 
-            movies = self._storage.list_movies()
+            movies = self._storage.load_movies()
             if not movies:
                 print("No movies to display.")
                 return
@@ -165,7 +170,7 @@ class MovieApp:
 
     def _command_movie_stats(self):
         """Displays statistics about movie ratings."""
-        movies = self._storage.list_movies()
+        movies = self._storage.load_movies()
 
         if not movies:
             print("No movies in the database to analyze.")
@@ -208,7 +213,7 @@ class MovieApp:
         Prompts the user to enter a movie title and searches for it in the database.
         """
         search_title = input("Enter the movie title to search for: ").strip()
-        movies = self._storage.list_movies()
+        movies = self._storage.load_movies()
 
         matching_movies = {title: movie for title, movie in movies.items() if search_title.lower() in title.lower()}
 
@@ -221,7 +226,7 @@ class MovieApp:
 
     def _command_random_movie(self):
         """Displays a random movie from the database."""
-        movies = self._storage.list_movies()
+        movies = self._storage.load_movies()
         if not movies:
             print("No movies available.")
             return
@@ -230,7 +235,7 @@ class MovieApp:
 
     def _command_sort_movies(self):
         """Sorts movies by rating in either ascending or descending order."""
-        movies = self._storage.list_movies()
+        movies = self._storage.load_movies()
         if not movies:
             print("No movies to sort.")
             return
@@ -240,36 +245,31 @@ class MovieApp:
         while sort_order not in ['a', 'd']:
             sort_order = input("Invalid input. Please enter 'a' for ascending or 'd' for descending: ").strip().lower()
 
-        sorted_movies = sorted(movies.items(), key=lambda x: x[1]['rating'], reverse=(sort_order == 'd'))
+        # Convert ratings to float for proper comparison
+        sorted_movies = sorted(movies.items(), key=lambda x: float(x[1]['rating']), reverse=(sort_order == 'd'))
 
         for title, info in sorted_movies:
             print(f"{title} ({info['year']}) - Rating: {info['rating']}")
 
+
     def _command_create_histogram(self):
-        """Creates a histogram of the movie ratings."""
-        movies = self._storage.list_movies()
+        """Creates and shows a histogram of the movie ratings."""
+        movies = self._storage.load_movies()
         if not movies:
             print("No movies to create histogram.")
             return
-
-        ratings = [movie['rating'] for movie in movies.values()]
+        ratings = [float(movie['rating']) for movie in movies.values()]
 
         if not ratings:
             print("No valid ratings to create histogram.")
             return
 
+        # Create and display the histogram
         plt.hist(ratings, bins=10, edgecolor='black')
         plt.title("Movie Rating Distribution")
         plt.xlabel("Rating")
         plt.ylabel("Frequency")
-
-        save_option = input("Do you want to save the histogram? (y/n): ").strip().lower()
-        if save_option == 'y':
-            file_path = input("Enter the file path to save the histogram (e.g., 'histogram.png'): ").strip()
-            plt.savefig(file_path)
-            print(f"Histogram saved to {file_path}.")
-        else:
-            plt.show()
+        plt.show()
 
     def run(self):
         """Starts the movie app and lets the user choose a command."""
@@ -282,7 +282,8 @@ class MovieApp:
             print("5. Search movie")
             print("6. Random movie")
             print("7. Sort movies")
-            print("8. Create histogram")
+            print("8. Generate Website")
+            print("9. Create histogram")
             print("0. Exit")
 
             command = input("Enter a command number: ").strip()
@@ -305,9 +306,12 @@ class MovieApp:
             elif command == "7":
                 self._command_sort_movies()
             elif command == "8":
+                self._command_generate_website()
+            elif command == "9":
                 self._command_create_histogram()
             else:
                 print("Invalid command, try again.")
+
 
 if __name__ == "__main__":
     app = MovieApp()

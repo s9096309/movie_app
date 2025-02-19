@@ -3,63 +3,83 @@ import os
 from storage.istorage import IStorage
 
 class StorageJson(IStorage):
-    def __init__(self, file_path):
-        self.file_path = file_path
-        # Wenn die Datei nicht existiert, wird sie mit einer leeren Struktur erstellt
-        if not os.path.exists(self.file_path):
-            self._save_movies({})  # Leeres Dictionary initialisieren
-
-    def _load_movies(self):
-        """Lädt die Filmdaten aus der JSON-Datei."""
-        try:
-            with open(self.file_path, 'r') as file:
-                try:
-                    return json.load(file)
-                except json.JSONDecodeError:
-                    print(f"Warning: The file {self.file_path} is empty or corrupted.")
-                    return {}  # Leeres Dictionary zurückgeben, falls die Datei nicht gelesen werden kann
-        except FileNotFoundError:
-            print(f"The file {self.file_path} was not found. Creating a new one.")
-            self._save_movies({})  # Leere Datei anlegen
-            return {}
+    def __init__(self, filename):
+        self.filename = filename
+        if not os.path.exists(self.filename):
+            self._save_movies({})  # Initialize with an empty dictionary if the file does not exist
 
     def _save_movies(self, movies):
-        """Speichert die Filmdaten in der JSON-Datei."""
+        """Saves movie data to the JSON file."""
         try:
-            with open(self.file_path, 'w') as file:
+            with open(self.filename, 'w', encoding='utf-8') as file:
                 json.dump(movies, file, indent=4)
         except IOError as e:
-            print(f"Error saving to file {self.file_path}: {e}")
+            print(f"Error saving to file {self.filename}: {e}")
 
-    def list_movies(self):
-        """Gibt alle Filme zurück."""
-        movies = self._load_movies()
+    def load_movies(self):
+        """Loads all movies from the JSON file."""
+        movies = {}
+        try:
+            with open(self.filename, 'r', encoding='utf-8') as jsonfile:
+                movies = json.load(jsonfile)
+                if not isinstance(movies, dict):  # If the JSON file is not in the expected format
+                    print("Warning: JSON file is not in the expected format. Resetting movies list.")
+                    movies = {}
+        except FileNotFoundError:
+            print("JSON file not found. Creating a new movie list.")
+        except (IOError, json.JSONDecodeError) as e:
+            print(f"Error reading JSON file: {e}. Resetting movies list.")
+
         return movies
 
-    def add_movie(self, title, rating, year, poster_url):
-        """Fügt einen neuen Film hinzu."""
-        movies = self._load_movies()
-        if title in movies:
-            print(f"The movie '{title}' already exists. Updating the existing movie.")
-        movies[title] = {"year": year, "rating": rating, "poster_url": poster_url}
-        self._save_movies(movies)
-
-    def delete_movie(self, movie_title):
-        """Löscht einen Film basierend auf dem Titel."""
-        movies = self._load_movies()
-        if movie_title in movies:
-            del movies[movie_title]  # Löscht den Film mit diesem Titel
-            self._save_movies(movies)
-            print(f"Movie '{movie_title}' has been deleted.")
+    def list_movies(self):
+        """Prints the list of movies when explicitly requested by the user."""
+        movies = self.load_movies()
+        if movies:
+            print("Movies in the database:")
+            for index, (title, data) in enumerate(movies.items(), start=1):
+                print(
+                    f"{index}. {title}, Rating: {data['rating']}, Year: {data['year']}, Poster URL: {data['poster_url']}, IMDb Link: {data['imdbID']}")
         else:
-            print(f"The movie '{movie_title}' was not found.")
+            print("No movies found.")
+
+    def add_movie(self, title, rating, year, poster_url, imdbID):
+        """Adds a new movie to the JSON file if it does not already exist."""
+        movies = self.load_movies()
+
+        # Check if the movie already exists (same title or same IMDb ID)
+        for movie in movies.values():
+            if movie.get("imdbID") == imdbID:
+                print(f"Movie '{title}' is already in the database.")
+                return False  # Return False if the movie is already in the database
+
+        # Add the movie if it does not exist yet
+        movies[title] = {
+            "year": year,
+            "rating": rating,
+            "poster_url": poster_url,
+            "imdbID": imdbID,
+        }
+        self._save_movies(movies)
+        return True  # Return True after successfully adding the movie
+
+    def delete_movie(self, title):
+        """Deletes a movie by its title."""
+        movies = self.load_movies()
+        if title in movies:
+            del movies[title]
+            self._save_movies(movies)
+            print(f"Movie '{title}' deleted successfully.")
+        else:
+            print(f"The movie '{title}' was not found.")
 
     def update_movie(self, title, rating, poster_url):
-        """Aktualisiert die Bewertung und das Poster-URL eines Films."""
-        movies = self._load_movies()
+        """Updates the rating, poster URL, and IMDb link of a movie."""
+        movies = self.load_movies()
         if title in movies:
             movies[title]['rating'] = rating
             movies[title]['poster_url'] = poster_url
             self._save_movies(movies)
+            print(f"Movie '{title}' updated successfully.")
         else:
             print(f"The movie '{title}' was not found.")
