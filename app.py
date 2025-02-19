@@ -32,10 +32,6 @@ def load_data_source():
 DATA_SOURCE = load_data_source()
 print(f"🔍 DATA_SOURCE set to: {DATA_SOURCE}")
 
-# Optionally, you can still load from the .env file as a fallback,
-# but only if the config.json does not contain the data source.
-
-# Ensure you're using the correct data source
 if DATA_SOURCE is None:
     DATA_SOURCE = os.getenv("MOVIE_DATA_SOURCE", "csv")  # Fallback to .env if not set in config.json
 

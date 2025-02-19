@@ -45,7 +45,7 @@ class StorageCsv(IStorage):
                             'rating': row.get('rating', "0.0"),
                             'year': row.get('year', "0000"),
                             'poster_url': row.get('poster_url', ""),
-                            'imdbID': imdb_url  # Stores the clickable URL
+                            'imdbID': imdbID
                         }
         except FileNotFoundError:
             print("CSV file not found.")
