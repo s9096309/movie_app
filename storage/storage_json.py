@@ -61,6 +61,7 @@ class StorageJson(IStorage):
             "imdbID": imdbID,
         }
         self._save_movies(movies)
+        print(f"Movie '{title}' ({year}) with rating {rating} was added successfully.")
         return True  # Return True after successfully adding the movie
 
     def delete_movie(self, title):

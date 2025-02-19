@@ -67,7 +67,6 @@ class StorageCsv(IStorage):
 
     def add_movie(self, title, rating, year, poster_url, imdbID):
         """Adds a new movie to the database if it doesn't already exist."""
-        print(f"DEBUG: Adding movie: {title}, IMDb-ID: {imdbID}")
 
         # Check if the movie already exists
         movies = self.load_movies()
@@ -79,7 +78,10 @@ class StorageCsv(IStorage):
             with open(self.filename, "a", newline="") as file:
                 writer = csv.writer(file)
                 writer.writerow([title, rating, year, poster_url, imdbID])
-            return True  # Return True after successfully adding the movie
+
+            # Confirmation message
+            print(f"Movie '{title}' ({year}) with rating {rating} was added successfully.")
+            return True
         except IOError as e:
             print(f"Error adding movie: {e}")
             return False  # Return False if there was an error adding the movie

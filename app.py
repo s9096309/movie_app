@@ -4,11 +4,10 @@ import os
 from dotenv import load_dotenv
 from flask import Flask, render_template
 
-# Initialize Flask app
+
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
-# Define file paths for CSV and JSON
 CSV_PATH = "data/movies.csv"
 JSON_PATH = "data/movies.json"
 
